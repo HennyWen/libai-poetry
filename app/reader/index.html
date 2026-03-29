@@ -138,17 +138,30 @@
   </div>
 
   <script>
-    let poems = [], entityMap = {}, annotationMap = {};
+    let poemIndex = [], poemsFullData = {}, entityMap = {}, annotationMap = {};
     let detailLoaded = false, detailLoading = false;
+    let fullDataLoaded = false, fullDataLoading = false;
 
     async function load() {
       try {
-        const poemsData = await fetch('../../data/poems/tang/libai/libai_poems_structured.json').then(r => r.json());
-        poems = poemsData;
+        const indexData = await fetch('../../data/poems/tang/libai/libai_poems_index.json').then(r => r.json());
+        poemIndex = indexData;
         document.getElementById('listLoading').style.display = 'none';
-        renderList(poems);
+        renderList(poemIndex);
       } catch (err) {
         document.getElementById('listLoading').textContent = '加载失败，请刷新重试';
+      }
+    }
+
+    async function loadFullPoems() {
+      if (fullDataLoaded || fullDataLoading) return;
+      fullDataLoading = true;
+      try {
+        const data = await fetch('../../data/poems/tang/libai/libai_poems_structured.json').then(r => r.json());
+        data.forEach(p => { poemsFullData[p.id] = p; });
+        fullDataLoaded = true;
+      } finally {
+        fullDataLoading = false;
       }
     }
 
@@ -183,51 +196,45 @@
         }
         const li = document.createElement('li');
         li.textContent = poem.title;
-        li.onclick = () => { if (activeEl) activeEl.classList.remove('active'); activeEl = li; li.classList.add('active'); showPoem(poem, li); };
+        li.onclick = () => { if (activeEl) activeEl.classList.remove('active'); activeEl = li; li.classList.add('active'); showPoem(poem.id, li); };
         frag.appendChild(li);
       });
       ul.innerHTML = '';
       ul.appendChild(frag);
     }
 
-    async function showPoem(poem, el) {
-      // 先渲染正文（不依赖实体数据）
-      document.getElementById('poemContent').innerHTML = `
-        <h1 class="poem-title">《${escHtml(poem.title)}》</h1>
-        <p class="poem-meta">李白 · ${poem.volume || ''} · ${poem.dynasty || '唐'}</p>
-        <div class="poem-body">${escHtml(poem.text || '').replace(/\n/g, '<br>')}</div>
-      `;
-      document.getElementById('themes').innerHTML = '';
-      document.getElementById('context').textContent = poem.context || '暂无创作情境';
+    async function showPoem(poemId, el) {
+      document.getElementById('poemContent').innerHTML = '<p style="color:#aaa;margin-top:40px;text-align:center">加载中…</p>';
       document.getElementById('annotations').innerHTML = '<p style="color:#aaa;font-size:13px">加载中…</p>';
+      document.getElementById('themes').innerHTML = '';
+      document.getElementById('context').textContent = '加载中…';
       document.getElementById('entityDetail').innerHTML = '<p style="color:#aaa;font-size:13px">点击高亮词查看详情</p>';
 
-      // 异步加载实体和注释数据
-      await loadDetailData();
+      // 并行加载完整诗文 + 实体注释
+      await Promise.all([loadFullPoems(), loadDetailData()]);
+
+      const poem = poemsFullData[poemId];
+      if (!poem) return;
 
       const entities = entityMap[poem.id] || [];
       const themes = entities.filter(e => e.type === '情感主题');
       const others = entities.filter(e => e.type !== '情感主题');
       const sorted = [...others].sort((a, b) => b.text.length - a.text.length);
 
-      // 重新渲染带实体高亮的正文
       document.getElementById('poemContent').innerHTML = `
         <h1 class="poem-title">《${highlightEntities(poem.title, sorted)}》</h1>
         <p class="poem-meta">李白 · ${poem.volume || ''} · ${poem.dynasty || '唐'}</p>
         <div class="poem-body">${highlightEntities(poem.text || '', sorted)}</div>
       `;
 
-      // 情感主题
       document.getElementById('themes').innerHTML = themes.map(t =>
         `<span class="theme-tag">${t.text}</span>`
       ).join('') || '<span style="color:#aaa;font-size:13px">无</span>';
 
-      // 情境
       document.getElementById('context').textContent = poem.context || '创作情境待补充';
 
-      // 王琦注释（模糊匹配标题）
       const cleanTitle = poem.title.split('　')[0].trim();
-      const annotations = Object.entries(annotationMap).find(([k, v]) =>
+      const annotations = Object.entries(annotationMap).find(([k]) =>
         k.includes(cleanTitle) || cleanTitle.includes(k)
       )?.[1] || [];
       const validAnnotations = annotations.filter(a => a.target && !a.target.includes('未找到') && !a.target.includes('无匹配') && !a.target.includes('无法'));
@@ -237,7 +244,6 @@
 
       document.getElementById('entityDetail').innerHTML = '<p style="color:#aaa;font-size:13px">点击高亮词查看详情</p>';
 
-      // 绑定点击事件
       document.querySelectorAll('#poemContent span[class^="entity-"]').forEach(span => {
         span.onclick = () => {
           const detail = document.getElementById('entityDetail');
@@ -297,7 +303,7 @@
       clearTimeout(searchTimer);
       searchTimer = setTimeout(() => {
         const q = e.target.value.trim();
-        renderList(q ? poems.filter(p => p.title.includes(q)) : poems);
+        renderList(q ? poemIndex.filter(p => p.title.includes(q)) : poemIndex);
       }, 200);
     });
 
