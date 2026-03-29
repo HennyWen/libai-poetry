@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>游历地图 · 李白全集知识库</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: "PingFang SC", "Hiragino Sans GB", sans-serif; background: #faf8f4; display: flex; flex-direction: column; height: 100vh; }
+    nav { background: #2c1810; padding: 0 24px; display: flex; align-items: center; height: 48px; flex-shrink: 0; }
+    nav .logo { color: #e8c97a; font-size: 15px; font-weight: bold; margin-right: 32px; }
+    nav a { color: #ccc; text-decoration: none; padding: 6px 12px; font-size: 13px; border-radius: 4px; }
+    nav a:hover, nav a.active { color: #e8c97a; }
+    #map { flex: 1; }
+    .map-legend { position: absolute; bottom: 32px; left: 16px; background: white; padding: 12px 16px;
+      border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 1000; font-size: 13px; }
+    .map-legend h4 { margin-bottom: 8px; color: #2c1810; }
+    .legend-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+    .legend-circle { border-radius: 50%; background: rgba(232,168,124,0.7); border: 2px solid #c87941; }
+    .route-panel { position: absolute; top: 60px; right: 16px; background: white; padding: 12px 16px;
+      border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 1000; font-size: 13px; width: 180px; }
+    .route-panel h4 { margin-bottom: 10px; color: #2c1810; }
+    .route-btn { display: block; width: 100%; padding: 7px 12px; margin-bottom: 6px; border: 1px solid #ddd;
+      border-radius: 6px; background: white; cursor: pointer; text-align: left; font-size: 13px; color: #333; }
+    .route-btn:hover { border-color: #c87941; color: #2c1810; }
+    .route-btn.active { background: #2c1810; color: #e8c97a; border-color: #2c1810; }
+    .route-btn .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+    .popup-title { font-size: 15px; font-weight: bold; color: #2c1810; margin-bottom: 6px; }
+    .popup-count { color: #888; font-size: 12px; margin-bottom: 8px; }
+    .popup-poems { list-style: none; max-height: 150px; overflow-y: auto; }
+    .popup-poems li { font-size: 13px; padding: 3px 0; color: #555; border-bottom: 1px solid #f0ece6; }
+  </style>
+</head>
+<body>
+  <nav>
+    <span class="logo">李白全集知识库</span>
+    <a href="../index.html">首页</a>
+    <a href="../reader/index.html">阅读器</a>
+    <a href="../search/index.html">意象检索</a>
+    <a href="index.html" class="active">游历地图</a>
+    <a href="../graph/index.html">诗人关系</a>
+  </nav>
+
+  <div id="map"></div>
+
+  <div class="route-panel">
+    <h4>李白旅游线路</h4>
+    <button class="route-btn" id="btn-0" onclick="toggleRoute(0)">
+      <span class="dot" style="background:#e05c2a"></span>出蜀漫游
+    </button>
+    <button class="route-btn" id="btn-1" onclick="toggleRoute(1)">
+      <span class="dot" style="background:#2a7ae0"></span>长安求仕
+    </button>
+    <button class="route-btn" id="btn-2" onclick="toggleRoute(2)">
+      <span class="dot" style="background:#2aae5c"></span>江南游历
+    </button>
+    <button class="route-btn" id="btn-3" onclick="toggleRoute(3)">
+      <span class="dot" style="background:#9b2ae0"></span>晚年流放
+    </button>
+  </div>
+
+  <div class="map-legend">
+    <h4>李白游历地名</h4>
+    <div class="legend-row"><div class="legend-circle" style="width:24px;height:24px"></div> 10首以上</div>
+    <div class="legend-row"><div class="legend-circle" style="width:16px;height:16px"></div> 5-9首</div>
+    <div class="legend-row"><div class="legend-circle" style="width:10px;height:10px"></div> 1-4首</div>
+    <div style="margin-top:8px;font-size:12px;color:#aaa">圆圈大小 = 诗作数量</div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-polylinedecorator@1.6.0/dist/leaflet.polylineDecorator.js"></script>
+  <script>
+    const map = L.map('map').setView([32, 108], 5);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap contributors © CARTO'
+    }).addTo(map);
+
+    async function load() {
+      const places = await fetch('../../data/relations/libai_places.json').then(r => r.json());
+      const withCoords = places.filter(p => p.location);
+
+      withCoords.forEach(place => {
+        const r = Math.sqrt(place.poem_count) * 6000;
+        const circle = L.circle([place.location.lat, place.location.lon], {
+          radius: r,
+          color: '#c87941',
+          fillColor: '#e8a87c',
+          fillOpacity: 0.55,
+          weight: 1.5
+        }).addTo(map);
+
+        const poemList = place.poems.slice(0, 10).map(p =>
+          `<li>《${p.title}》</li>`
+        ).join('');
+        const more = place.poems.length > 10 ? `<li style="color:#aaa">…共 ${place.poems.length} 首</li>` : '';
+
+        circle.bindPopup(`
+          <div class="popup-title">${place.place}</div>
+          <div class="popup-count">${place.poem_count} 首诗
+            ${place.location.note ? `· ${place.location.note}` : ''}</div>
+          <ul class="popup-poems">${poemList}${more}</ul>
+        `, { maxWidth: 240 });
+
+        // 添加地名标签（5首以上显示）
+        if (place.poem_count >= 5) {
+          L.marker([place.location.lat, place.location.lon], {
+            icon: L.divIcon({
+              className: '',
+              html: `<div style="font-size:${place.poem_count >= 15 ? 14 : 12}px;color:#2c1810;
+                font-weight:bold;white-space:nowrap;
+                text-shadow:0 0 4px white,0 0 4px white,0 0 4px white">${place.place}</div>`,
+              iconAnchor: [-10, 8]
+            })
+          }).addTo(map);
+        }
+      });
+    }
+
+    load();
+
+    // 旅游线路数据
+    const routes = [
+      {
+        name: '出蜀漫游', color: '#e05c2a',
+        desc: '725年，李白出蜀，顺三峡东下，开始漫游生涯',
+        stops: [
+          { name: '峨眉', coord: [29.6, 103.48], note: '少年习剑、读书处' },
+          { name: '成都', coord: [30.65, 104.06], note: '出蜀前游历' },
+          { name: '三峡', coord: [30.8, 109.5], note: '顺流而下，写《早发白帝城》' },
+          { name: '白帝城', coord: [30.98, 109.47], note: '朝辞白帝彩云间' },
+          { name: '黄鹤楼', coord: [30.54, 114.3], note: '故人西辞黄鹤楼' },
+          { name: '洞庭', coord: [29.37, 112.97], note: '游洞庭，写《陪族叔刑部侍郎晔…》' },
+          { name: '金陵', coord: [32.06, 118.77], note: '初抵金陵，定居' },
+        ]
+      },
+      {
+        name: '长安求仕', color: '#2a7ae0',
+        desc: '742年，李白奉诏入京，供奉翰林，后被赐金放还',
+        stops: [
+          { name: '梁园', coord: [34.42, 115.65], note: '游梁宋，结交友人' },
+          { name: '洛阳', coord: [34.68, 112.45], note: '与杜甫初次相遇' },
+          { name: '黄河', coord: [35.5, 108.0], note: '君不见黄河之水天上来' },
+          { name: '长安', coord: [34.27, 108.93], note: '供奉翰林，赐金放还' },
+        ]
+      },
+      {
+        name: '江南游历', color: '#2aae5c',
+        desc: '李白多次游历江南，留下大量名篇',
+        stops: [
+          { name: '扬州', coord: [32.39, 119.41], note: '烟花三月下扬州' },
+          { name: '金陵', coord: [32.06, 118.77], note: '凤凰台上凤凰游' },
+          { name: '宣城', coord: [30.95, 118.75], note: '多次游历，怀念谢朓' },
+          { name: '庐山', coord: [29.58, 115.99], note: '飞流直下三千尺' },
+          { name: '东山', coord: [30.23, 121.55], note: '我本楚狂人，凤歌笑孔丘' },
+          { name: '天台', coord: [29.14, 121.01], note: '游天台山' },
+          { name: '剡溪', coord: [29.5, 121.0], note: '湖月照我影，送我至剡溪' },
+        ]
+      },
+      {
+        name: '晚年流放', color: '#9b2ae0',
+        desc: '757年，李白因永王之乱被流放夜郎，途中遇赦',
+        stops: [
+          { name: '长安', coord: [34.27, 108.93], note: '安史之乱，被迫离京' },
+          { name: '黄鹤楼', coord: [30.54, 114.3], note: '南下途经' },
+          { name: '洞庭', coord: [29.37, 112.97], note: '途经洞庭' },
+          { name: '夜郎', coord: [26.5, 105.5], note: '流放夜郎，途中遇赦' },
+          { name: '白帝城', coord: [30.98, 109.47], note: '遇赦东还，写《早发白帝城》' },
+          { name: '当涂', coord: [31.57, 118.5], note: '762年卒于当涂' },
+        ]
+      }
+    ];
+
+    let routeLayers = routes.map(() => null);
+    let activeRoute = -1;
+
+    function toggleRoute(idx) {
+      if (activeRoute === idx) {
+        // 关闭
+        routeLayers[idx].forEach(l => map.removeLayer(l));
+        routeLayers[idx] = null;
+        document.getElementById(`btn-${idx}`).classList.remove('active');
+        activeRoute = -1;
+      } else {
+        // 关闭上一条
+        if (activeRoute >= 0 && routeLayers[activeRoute]) {
+          routeLayers[activeRoute].forEach(l => map.removeLayer(l));
+          routeLayers[activeRoute] = null;
+          document.getElementById(`btn-${activeRoute}`).classList.remove('active');
+        }
+        // 绘制新路线
+        const route = routes[idx];
+        const layers = [];
+        const coords = route.stops.map(s => s.coord);
+
+        // 画线
+        const line = L.polyline(coords, {
+          color: route.color, weight: 3, opacity: 0.8, dashArray: '8,5'
+        }).addTo(map);
+        layers.push(line);
+
+        // 箭头
+        layers.push(L.polylineDecorator(line, {
+          patterns: [{
+            offset: '10%', repeat: '20%',
+            symbol: L.Symbol.arrowHead({
+              pixelSize: 10, headAngle: 35,
+              pathOptions: { color: route.color, fillOpacity: 1, weight: 0 }
+            })
+          }]
+        }).addTo(map));
+
+        // 画站点
+        route.stops.forEach((stop, i) => {
+          const marker = L.circleMarker(stop.coord, {
+            radius: 8, color: route.color, fillColor: 'white',
+            fillOpacity: 1, weight: 2.5
+          }).addTo(map);
+          marker.bindPopup(`
+            <div class="popup-title">${stop.name}</div>
+            <div style="font-size:12px;color:#888;margin-bottom:4px">${route.name} · 第${i+1}站</div>
+            <div style="font-size:13px;color:#555">${stop.note}</div>
+          `);
+          layers.push(marker);
+
+          // 站点名称
+          layers.push(L.marker(stop.coord, {
+            icon: L.divIcon({
+              className: '',
+              html: `<div style="font-size:12px;color:${route.color};font-weight:bold;white-space:nowrap;
+                text-shadow:0 0 3px white,0 0 3px white;margin-left:10px">${stop.name}</div>`,
+              iconAnchor: [0, 8]
+            })
+          }).addTo(map));
+        });
+
+        routeLayers[idx] = layers;
+        document.getElementById(`btn-${idx}`).classList.add('active');
+        activeRoute = idx;
+        map.fitBounds(L.polyline(coords).getBounds(), { padding: [60, 60] });
+      }
+    }
+  </script>
+</body>
+</html>

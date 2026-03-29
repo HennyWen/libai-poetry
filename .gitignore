@@ -1,0 +1,7 @@
+scripts/
+*.py
+*.pyc
+__pycache__/
+.DS_Store
+data/raw/
+*.log

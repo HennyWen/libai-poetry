@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>意象检索 · 李白全集知识库</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: "PingFang SC", "Hiragino Sans GB", sans-serif; background: #faf8f4; color: #333; }
+    nav { background: #2c1810; padding: 0 24px; display: flex; align-items: center; height: 48px; }
+    nav .logo { color: #e8c97a; font-size: 15px; font-weight: bold; margin-right: 32px; }
+    nav a { color: #ccc; text-decoration: none; padding: 6px 12px; font-size: 13px; border-radius: 4px; }
+    nav a:hover, nav a.active { color: #e8c97a; }
+    .header { padding: 40px 60px 20px; }
+    .header h1 { font-size: 24px; color: #2c1810; margin-bottom: 20px; }
+    .search-bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .search-bar input { padding: 10px 16px; font-size: 15px; border: 1px solid #ddd; border-radius: 6px; width: 300px; }
+    .search-bar select { padding: 10px 12px; font-size: 14px; border: 1px solid #ddd; border-radius: 6px; background: white; }
+    .search-bar button { padding: 10px 24px; background: #2c1810; color: #e8c97a; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
+    .hot-tags { padding: 16px 60px 0; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .hot-tags span { font-size: 13px; color: #888; }
+    .hot-tag { padding: 4px 12px; background: white; border: 1px solid #ddd; border-radius: 12px; font-size: 13px; cursor: pointer; color: #555; }
+    .hot-tag:hover { border-color: #e8c97a; color: #2c1810; }
+    .results { padding: 24px 60px; }
+    .result-count { font-size: 14px; color: #888; margin-bottom: 16px; }
+    .poem-card { background: white; border-radius: 8px; padding: 20px 24px; margin-bottom: 12px; box-shadow: 0 1px 6px rgba(0,0,0,0.06); }
+    .poem-card .title { font-size: 16px; font-weight: bold; color: #2c1810; margin-bottom: 6px; }
+    .poem-card .excerpt { font-size: 14px; color: #555; line-height: 1.8; margin-bottom: 10px; }
+    .poem-card .excerpt mark { background: #fff3cd; padding: 0 2px; border-radius: 2px; }
+    .poem-card .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+    .poem-card .tag { padding: 2px 10px; border-radius: 10px; font-size: 12px; }
+    .tag-意象 { background: #e8f5e9; color: #2e7d32; }
+    .tag-地名 { background: #e3f2fd; color: #1565c0; }
+    .tag-主题 { background: #fce4ec; color: #c2185b; }
+    .allusions-section { padding: 24px 60px; }
+    .allusions-section h2 { font-size: 18px; color: #2c1810; margin-bottom: 16px; }
+    .allusions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .allusion-card { background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 6px rgba(0,0,0,0.06); }
+    .allusion-card .rank { display: inline-block; width: 28px; height: 28px; background: #2c1810; color: #e8c97a; border-radius: 50%; text-align: center; line-height: 28px; font-size: 14px; font-weight: bold; margin-bottom: 8px; }
+    .allusion-card .name { font-size: 16px; font-weight: bold; color: #2c1810; margin-bottom: 4px; }
+    .allusion-card .count { font-size: 12px; color: #888; margin-bottom: 8px; }
+    .allusion-card .example { font-size: 13px; color: #666; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <nav>
+    <span class="logo">李白全集知识库</span>
+    <a href="../index.html">首页</a>
+    <a href="../reader/index.html">阅读器</a>
+    <a href="index.html" class="active">意象检索</a>
+    <a href="../map/index.html">游历地图</a>
+    <a href="../graph/index.html">诗人关系</a>
+    <a href="../allusions/index.html">十大典故</a>
+  </nav>
+
+  <div class="header">
+    <h1>意象检索</h1>
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="输入意象、地名或主题…" onkeydown="if(event.key==='Enter')doSearch()">
+      <select id="filterType">
+        <option value="">全部类型</option>
+        <option value="意象">意象</option>
+        <option value="地名">地名</option>
+        <option value="人物">人物</option>
+        <option value="典故">典故</option>
+        <option value="情感主题">情感主题</option>
+      </select>
+      <button onclick="doSearch()">检索</button>
+    </div>
+  </div>
+
+  <div class="hot-tags">
+    <span>热门：</span>
+    <span class="hot-tag" onclick="quickSearch('月')">月</span>
+    <span class="hot-tag" onclick="quickSearch('酒')">酒</span>
+    <span class="hot-tag" onclick="quickSearch('剑')">剑</span>
+    <span class="hot-tag" onclick="quickSearch('峨眉')">峨眉</span>
+    <span class="hot-tag" onclick="quickSearch('长安')">长安</span>
+    <span class="hot-tag" onclick="quickSearch('送别')">送别</span>
+    <span class="hot-tag" onclick="quickSearch('杜甫')">杜甫</span>
+    <span class="hot-tag" onclick="quickSearch('怀古')">怀古</span>
+    <span class="hot-tag" onclick="quickSearch('边塞')">边塞</span>
+  </div>
+
+  <div class="results">
+    <div class="result-count" id="resultCount"></div>
+    <div id="resultList"></div>
+  </div>
+
+  <div class="allusions-section" id="allusionsSection">
+    <h2>十大典故</h2>
+    <div class="allusions-grid" id="allusionsGrid"></div>
+  </div>
+
+  <script>
+    let poems = [], entityMap = {};
+
+    async function load() {
+      const [poemsData, entitiesData] = await Promise.all([
+        fetch('../../data/poems/tang/libai/libai_poems_structured.json').then(r => r.json()),
+        fetch('../../data/entities/libai_entities_round1.json').then(r => r.json())
+      ]);
+      poems = poemsData;
+      entitiesData.forEach(e => { entityMap[e.poem_id] = e.entities || []; });
+
+      fetch('../../data/annotations/libai_allusions.json')
+        .then(r => r.json())
+        .then(renderAllusions)
+        .catch(e => console.error('典故加载失败', e));
+    }
+
+    function renderAllusions(data) {
+      const counter = {};
+      data.forEach(item => {
+        const t = item.target || '';
+        if (!t || t.includes('未找到') || t.includes('无法') || t.includes('无匹配')) return;
+        if (!counter[t]) counter[t] = [];
+        counter[t].push(item);
+      });
+
+      const top10 = Object.entries(counter)
+        .sort((a, b) => b[1].length - a[1].length)
+        .slice(0, 10);
+
+      const grid = document.getElementById('allusionsGrid');
+      grid.innerHTML = top10.map(([target, items], i) => `
+        <div class="allusion-card">
+          <div class="rank">${i + 1}</div>
+          <div class="name">${target}</div>
+          <div class="count">出现 ${items.length} 次 · 见于${[...new Set(items.map(x => x.poem_title))].join('、')}</div>
+          <div class="example">${items[0].content.substring(0, 80)}…</div>
+        </div>
+      `).join('');
+    }
+
+    function quickSearch(kw) {
+      document.getElementById('searchInput').value = kw;
+      document.getElementById('filterType').value = '';
+      doSearch();
+    }
+
+    function doSearch() {
+      const kw = document.getElementById('searchInput').value.trim();
+      const typeFilter = document.getElementById('filterType').value;
+      if (!kw) return;
+
+      document.getElementById('allusionsSection').style.display = 'none';
+
+      const results = poems.filter(poem => {
+        const entities = entityMap[poem.id] || [];
+        return entities.some(e => {
+          const matchType = !typeFilter || e.type === typeFilter;
+          const matchText = (e.text && e.text.includes(kw)) || (e.canonical && e.canonical.includes(kw));
+          return matchType && matchText;
+        });
+      });
+
+      renderResults(results, kw, typeFilter);
+    }
+
+    function renderResults(results, kw, typeFilter) {
+      document.getElementById('resultCount').textContent = `共找到 ${results.length} 首`;
+
+      const html = results.map(poem => {
+        const entities = (entityMap[poem.id] || []).filter(e => {
+          const matchType = !typeFilter || e.type === typeFilter;
+          const matchText = (e.text && e.text.includes(kw)) || (e.canonical && e.canonical.includes(kw));
+          return matchType && matchText;
+        });
+
+        // 从正文中提取含关键词的片段
+        const excerpt = getExcerpt(poem.text, kw);
+
+        // 该诗的主题标签
+        const themes = (entityMap[poem.id] || []).filter(e => e.type === '情感主题').slice(0, 3);
+
+        return `
+          <div class="poem-card">
+            <div class="title">《${poem.title}》· ${poem.volume || ''}</div>
+            <div class="excerpt">${excerpt}</div>
+            <div class="tags">
+              ${entities.map(e => `<span class="tag tag-${e.type === '情感主题' ? '主题' : e.type}">${e.type}：${e.text}</span>`).join('')}
+              ${themes.map(t => `<span class="tag tag-主题">${t.text}</span>`).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('resultList').innerHTML = html || '<p style="color:#aaa">未找到相关诗作</p>';
+    }
+
+    function getExcerpt(text, kw) {
+      const idx = text.indexOf(kw);
+      if (idx === -1) return text.slice(0, 80).replace(/\n/g, '，') + '…';
+      const start = Math.max(0, idx - 20);
+      const end = Math.min(text.length, idx + kw.length + 40);
+      let excerpt = (start > 0 ? '…' : '') + text.slice(start, end).replace(/\n/g, '，');
+      excerpt = excerpt.replace(kw, `<mark>${kw}</mark>`);
+      return excerpt + (end < text.length ? '…' : '');
+    }
+
+    load();
+  </script>
+</body>
+</html>

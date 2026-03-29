@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>李白全集知识库</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: "PingFang SC", "Hiragino Sans GB", sans-serif; background: #faf8f4; color: #333; }
+    nav { background: #2c1810; padding: 0 40px; display: flex; align-items: center; height: 56px; }
+    nav .logo { color: #e8c97a; font-size: 18px; font-weight: bold; margin-right: 40px; letter-spacing: 2px; }
+    nav a { color: #ccc; text-decoration: none; padding: 8px 16px; border-radius: 4px; font-size: 14px; }
+    nav a:hover, nav a.active { color: #e8c97a; background: rgba(232,201,122,0.1); }
+    .hero { text-align: center; padding: 80px 20px 60px; }
+    .hero h1 { font-size: 48px; color: #2c1810; letter-spacing: 4px; margin-bottom: 12px; }
+    .hero p { font-size: 16px; color: #888; letter-spacing: 1px; }
+    .cards { display: flex; gap: 24px; padding: 0 60px 80px; flex-wrap: wrap; justify-content: center; }
+    .card { background: white; border-radius: 12px; padding: 32px; width: 240px; text-align: center;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08); text-decoration: none; color: inherit;
+            transition: transform 0.2s, box-shadow 0.2s; }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+    .card .icon { font-size: 40px; margin-bottom: 16px; }
+    .card h2 { font-size: 20px; color: #2c1810; margin-bottom: 8px; }
+    .card p { font-size: 13px; color: #888; line-height: 1.6; }
+    .stats { background: #2c1810; color: #e8c97a; display: flex; justify-content: center;
+             gap: 60px; padding: 32px; }
+    .stats .item { text-align: center; }
+    .stats .num { font-size: 36px; font-weight: bold; }
+    .stats .label { font-size: 13px; color: #ccc; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <nav>
+    <span class="logo">李白全集知识库</span>
+    <a href="reader/index.html">阅读器</a>
+    <a href="search/index.html">意象检索</a>
+    <a href="map/index.html">游历地图</a>
+    <a href="graph/index.html">诗人关系</a>
+    <a href="allusions/index.html">十大典故</a>
+  </nav>
+
+  <div class="hero">
+    <h1>李白全集知识库</h1>
+    <p>结构化数据 · 实体标注 · 意象检索 · 游历地图</p>
+  </div>
+
+  <div class="stats">
+    <div class="item"><div class="num">820</div><div class="label">首诗词</div></div>
+    <div class="item"><div class="num">9,379</div><div class="label">个实体标注</div></div>
+    <div class="item"><div class="num">1,235</div><div class="label">个地名</div></div>
+    <div class="item"><div class="num">645</div><div class="label">个意象</div></div>
+  </div>
+
+  <div class="cards" style="margin-top: 60px;">
+    <a href="reader/index.html" class="card">
+      <div class="icon">📖</div>
+      <h2>阅读器</h2>
+      <p>11类实体彩色高亮，悬停查看注释，侧边栏显示创作情境</p>
+    </a>
+    <a href="search/index.html" class="card">
+      <div class="icon">🔍</div>
+      <h2>意象检索</h2>
+      <p>按意象、地名、主题检索，快速找到相关诗作</p>
+    </a>
+    <a href="map/index.html" class="card">
+      <div class="icon">🗺️</div>
+      <h2>游历地图</h2>
+      <p>可视化李白一生游历路线，点击地点查看诗作</p>
+    </a>
+    <a href="graph/index.html" class="card">
+      <div class="icon">🕸️</div>
+      <h2>诗人关系</h2>
+      <p>以李白为中心的诗人交游关系图，点击连线查看往来诗</p>
+    </a>
+    <a href="allusions/index.html" class="card">
+      <div class="icon">📚</div>
+      <h2>十大典故</h2>
+      <p>李白诗中最常用的典故和意象，附王琦注释</p>
+    </a>
+  </div>
+</body>
+</html>

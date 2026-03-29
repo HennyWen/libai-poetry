@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>阅读器 · 李白全集知识库</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: "PingFang SC", "Hiragino Sans GB", sans-serif; background: #faf8f4; color: #333; display: flex; flex-direction: column; height: 100vh; }
+    nav { background: #2c1810; padding: 0 24px; display: flex; align-items: center; height: 48px; flex-shrink: 0; }
+    nav .logo { color: #e8c97a; font-size: 15px; font-weight: bold; margin-right: 32px; }
+    nav a { color: #ccc; text-decoration: none; padding: 6px 12px; font-size: 13px; border-radius: 4px; }
+    nav a:hover, nav a.active { color: #e8c97a; }
+
+    .layout { display: flex; flex: 1; overflow: hidden; }
+
+    /* 左侧目录 */
+    .sidebar-left { width: 220px; background: white; border-right: 1px solid #e8e0d5; overflow-y: auto; flex-shrink: 0; }
+    .sidebar-left .search { padding: 12px; border-bottom: 1px solid #e8e0d5; }
+    .sidebar-left input { width: 100%; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
+    .poem-list { list-style: none; }
+    .poem-list li { padding: 8px 16px; font-size: 13px; cursor: pointer; border-bottom: 1px solid #f0ece6; color: #555; }
+    .poem-list li:hover { background: #fdf5e6; color: #2c1810; }
+    .poem-list li.active { background: #fdf5e6; color: #2c1810; font-weight: bold; border-left: 3px solid #e8c97a; }
+    .poem-list .vol { padding: 6px 16px 4px; font-size: 11px; color: #aaa; background: #f9f7f4; font-weight: bold; }
+
+    /* 中间正文 */
+    .content { flex: 1; padding: 40px; overflow-y: auto; }
+    .poem-title { font-size: 26px; color: #2c1810; letter-spacing: 2px; margin-bottom: 8px; }
+    .poem-meta { font-size: 13px; color: #aaa; margin-bottom: 32px; }
+    .poem-body { font-size: 18px; line-height: 2.4; letter-spacing: 1px; color: #333; }
+    .poem-body span[class^="entity-"] {
+      cursor: pointer; position: relative; font-weight: 500;
+    }
+    .poem-body span[class^="entity-"]:hover::after {
+      content: attr(data-note);
+      position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+      background: #333; color: white; padding: 4px 8px; border-radius: 4px;
+      font-size: 12px; white-space: nowrap; z-index: 100; margin-bottom: 4px;
+    }
+    .entity-人物   { color: #ff6f00; }
+    .entity-地名   { color: #1976d2; }
+    .entity-意象   { color: #388e3c; }
+    .entity-典故   { color: #f57c00; }
+    .entity-时令   { color: #7b1fa2; }
+    .entity-情感主题 { display: none; }
+    .entity-典籍   { color: #c2185b; }
+    .entity-神话仙道 { color: #0097a7; }
+    .entity-自然物  { color: #689f38; }
+    .entity-官职   { color: #5d4037; }
+
+    /* 图例 */
+    .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
+    .legend-item { font-size: 12px; padding: 3px 8px; border-radius: 10px; border: 1px solid #eee; font-weight: 500; }
+
+    /* 右侧信息栏 */
+    .sidebar-right { width: 260px; background: white; border-left: 1px solid #e8e0d5; overflow-y: auto; flex-shrink: 0; padding: 20px; }
+    .sidebar-right h3 { font-size: 14px; color: #2c1810; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e8e0d5; }
+    .entity-detail { margin-bottom: 8px; font-size: 13px; }
+    .entity-detail .tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-right: 6px; }
+    .context-box { background: #fdf5e6; border-left: 3px solid #e8c97a; padding: 12px; border-radius: 4px; font-size: 13px; line-height: 1.7; color: #666; margin-top: 8px; }
+    .themes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .theme-tag { background: #fce4ec; color: #c2185b; padding: 3px 10px; border-radius: 10px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <nav>
+    <span class="logo">李白全集知识库</span>
+    <a href="../index.html">首页</a>
+    <a href="index.html" class="active">阅读器</a>
+    <a href="../search/index.html">意象检索</a>
+    <a href="../map/index.html">游历地图</a>
+    <a href="../graph/index.html">诗人关系</a>
+  </nav>
+
+  <div class="layout">
+    <div class="sidebar-left">
+      <div class="search"><input type="text" id="searchPoem" placeholder="搜索诗名…"></div>
+      <ul class="poem-list" id="poemList"></ul>
+    </div>
+
+    <div class="content">
+      <div class="legend" id="legend">
+        <span class="legend-item" style="color:#ff6f00">人物</span>
+        <span class="legend-item" style="color:#1976d2">地名</span>
+        <span class="legend-item" style="color:#388e3c">意象</span>
+        <span class="legend-item" style="color:#f57c00">典故</span>
+        <span class="legend-item" style="color:#7b1fa2">时令</span>
+        <span class="legend-item" style="color:#0097a7">神话仙道</span>
+        <span class="legend-item" style="color:#689f38">自然物</span>
+        <span class="legend-item" style="color:#5d4037">官职</span>
+      </div>
+      <div id="poemContent"><p style="color:#aaa;margin-top:40px">← 从左侧选择一首诗</p></div>
+    </div>
+
+    <div class="sidebar-right">
+      <h3>情感主题</h3>
+      <div class="themes" id="themes"></div>
+      <h3 style="margin-top:20px">创作情境</h3>
+      <div class="context-box" id="context">选择诗作后显示</div>
+      <h3 style="margin-top:20px">王琦注释</h3>
+      <div id="annotations" style="max-height:200px;overflow-y:auto;font-size:12px;color:#666"></div>
+      <h3 style="margin-top:20px">实体详情</h3>
+      <div id="entityDetail"><p style="color:#aaa;font-size:13px">点击高亮词查看详情</p></div>
+    </div>
+  </div>
+
+  <script>
+    let poems = [], entityMap = {}, annotationMap = {};
+
+    async function load() {
+      const [poemsData, entitiesData, annotationsData] = await Promise.all([
+        fetch('../../data/poems/tang/libai/libai_poems_structured.json').then(r => r.json()),
+        fetch('../../data/entities/libai_entities_round1.json').then(r => r.json()),
+        fetch('../../data/annotations/libai_wangqi_annotations_fixed.json').then(r => r.json())
+      ]);
+      poems = poemsData;
+      entitiesData.forEach(e => { entityMap[e.poem_id] = e.entities || []; });
+      annotationsData.forEach(a => { annotationMap[a.title] = a.annotations || []; });
+      renderList(poems);
+    }
+
+    function renderList(list) {
+      const ul = document.getElementById('poemList');
+      ul.innerHTML = '';
+      let lastVol = null;
+      list.forEach(poem => {
+        if (poem.volume !== lastVol) {
+          lastVol = poem.volume;
+          const li = document.createElement('li');
+          li.className = 'vol';
+          li.textContent = poem.volume || '未分卷';
+          ul.appendChild(li);
+        }
+        const li = document.createElement('li');
+        li.textContent = poem.title;
+        li.onclick = () => showPoem(poem, li);
+        ul.appendChild(li);
+      });
+    }
+
+    function showPoem(poem, el) {
+      document.querySelectorAll('.poem-list li').forEach(li => li.classList.remove('active'));
+      el.classList.add('active');
+
+      const entities = entityMap[poem.id] || [];
+      const themes = entities.filter(e => e.type === '情感主题');
+      const others = entities.filter(e => e.type !== '情感主题');
+
+      // 渲染正文（将实体替换为带颜色的 span）
+      let text = poem.text || '';
+      // 按文字长度降序替换，避免短词覆盖长词
+      const sorted = [...others].sort((a, b) => b.text.length - a.text.length);
+      const rendered = highlightEntities(text, sorted);
+
+      document.getElementById('poemContent').innerHTML = `
+        <h1 class="poem-title">《${highlightEntities(poem.title, sorted)}》</h1>
+        <p class="poem-meta">李白 · ${poem.volume || ''} · ${poem.dynasty || '唐'}</p>
+        <div class="poem-body">${rendered}</div>
+      `;
+
+      // 情感主题
+      document.getElementById('themes').innerHTML = themes.map(t =>
+        `<span class="theme-tag">${t.text}</span>`
+      ).join('') || '<span style="color:#aaa;font-size:13px">无</span>';
+
+      // 情境
+      document.getElementById('context').textContent = poem.context || '创作情境待补充';
+
+      // 王琦注释（模糊匹配标题）
+      const cleanTitle = poem.title.split('　')[0].trim();
+      const annotations = Object.entries(annotationMap).find(([k, v]) =>
+        k.includes(cleanTitle) || cleanTitle.includes(k)
+      )?.[1] || [];
+      const validAnnotations = annotations.filter(a => a.target && !a.target.includes('未找到') && !a.target.includes('无匹配') && !a.target.includes('无法'));
+      document.getElementById('annotations').innerHTML = validAnnotations.length > 0
+        ? validAnnotations.map(a => `<div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #f0ece6"><strong style="color:#2c1810">${a.target}</strong><br>${a.note}</div>`).join('')
+        : '<p style="color:#aaa;font-size:13px">暂无注释</p>';
+
+      document.getElementById('entityDetail').innerHTML = '<p style="color:#aaa;font-size:13px">点击高亮词查看详情</p>';
+
+      // 绑定点击事件
+      document.querySelectorAll('#poemContent span[class^="entity-"]').forEach(span => {
+        span.onclick = () => {
+          const detail = document.getElementById('entityDetail');
+          detail.innerHTML = `
+            <div class="entity-detail">
+              <strong>${span.textContent}</strong>
+              <span class="tag" style="background:#e8f5e9">${span.dataset.type}</span>
+              ${span.dataset.canonical ? `<br><small>规范名：${span.dataset.canonical}</small>` : ''}
+              ${span.dataset.note ? `<br><small style="color:#888">${span.dataset.note}</small>` : ''}
+            </div>
+          `;
+        };
+      });
+    }
+
+    function highlightEntities(text, entities) {
+      // 找出所有实体位置（简单字符串匹配）
+      const marks = [];
+      entities.forEach(e => {
+        let idx = 0;
+        while (true) {
+          const pos = text.indexOf(e.text, idx);
+          if (pos === -1) break;
+          marks.push({ start: pos, end: pos + e.text.length, entity: e });
+          idx = pos + e.text.length;
+          break; // 每个实体只标注第一次出现
+        }
+      });
+      // 按起始位置排序，去除重叠
+      marks.sort((a, b) => a.start - b.start);
+      const noOverlap = [];
+      let lastEnd = 0;
+      for (const m of marks) {
+        if (m.start >= lastEnd) { noOverlap.push(m); lastEnd = m.end; }
+      }
+      // 构建 HTML
+      let result = '';
+      let pos = 0;
+      for (const m of noOverlap) {
+        result += escHtml(text.slice(pos, m.start));
+        const e = m.entity;
+        const note = e.note || e.type;
+        const canonical = e.canonical || '';
+        result += `<span class="entity-${e.type}" data-type="${e.type}" data-note="${note}" data-canonical="${canonical}">${escHtml(e.text)}</span>`;
+        pos = m.end;
+      }
+      result += escHtml(text.slice(pos));
+      return result.replace(/\n/g, '<br>');
+    }
+
+    function escHtml(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    document.getElementById('searchPoem').addEventListener('input', e => {
+      const q = e.target.value.trim();
+      renderList(q ? poems.filter(p => p.title.includes(q)) : poems);
+    });
+
+    load();
+  </script>
+</body>
+</html>
