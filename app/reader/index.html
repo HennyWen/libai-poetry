@@ -69,12 +69,20 @@
       .nav-links { display: none; flex-direction: column; width: 100%; padding-bottom: 8px; }
       .nav-links.open { display: flex; }
       nav a { padding: 8px 4px; font-size: 14px; }
-      .layout { flex-direction: column; height: auto; }
-      .sidebar-left { width: 100%; height: 180px; border-right: none; border-bottom: 1px solid #e8e0d5; flex-shrink: 0; }
+      body { height: auto; min-height: 100vh; }
+      .layout { flex-direction: column; overflow: visible; height: auto; }
+      .sidebar-left { width: 100%; height: auto; max-height: 0; overflow: hidden; border-right: none;
+        border-bottom: none; transition: max-height 0.3s ease; flex-shrink: 0; }
+      .sidebar-left.open { max-height: 260px; border-bottom: 1px solid #e8e0d5; overflow-y: auto; }
       .sidebar-right { display: none; }
-      .content { padding: 20px 16px; overflow-y: visible; }
-      body { height: auto; }
+      .content { padding: 16px; overflow-y: visible; }
+      .poem-title { font-size: 20px; }
+      .poem-body { font-size: 16px; line-height: 2.2; }
+      .mobile-list-toggle { display: flex; align-items: center; justify-content: space-between;
+        padding: 10px 16px; background: white; border-bottom: 1px solid #e8e0d5;
+        font-size: 14px; color: #2c1810; cursor: pointer; font-weight: bold; }
     }
+    .mobile-list-toggle { display: none; }
   </style>
 </head>
 <body>
@@ -92,6 +100,9 @@
   </nav>
 
   <div class="layout">
+    <div class="mobile-list-toggle" onclick="this.nextElementSibling.classList.toggle('open');this.querySelector('.arrow').textContent=this.nextElementSibling.classList.contains('open')?'▲':'▼'">
+      <span>诗目录</span><span class="arrow">▼</span>
+    </div>
     <div class="sidebar-left">
       <div class="search"><input type="text" id="searchPoem" placeholder="搜索诗名…"></div>
       <ul class="poem-list" id="poemList"></ul>
