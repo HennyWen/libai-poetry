@@ -11,6 +11,15 @@
     nav .logo { color: #e8c97a; font-size: 18px; font-weight: bold; margin-right: 40px; letter-spacing: 2px; }
     nav a { color: #ccc; text-decoration: none; padding: 8px 16px; border-radius: 4px; font-size: 14px; }
     nav a:hover, nav a.active { color: #e8c97a; background: rgba(232,201,122,0.1); }
+    .nav-toggle { display: none; background: none; border: none; color: #e8c97a; font-size: 22px; cursor: pointer; margin-left: auto; }
+    @media (max-width: 640px) {
+      nav { flex-wrap: wrap; height: auto; padding: 0 16px; }
+      nav .logo { padding: 12px 0; }
+      .nav-toggle { display: block; padding: 12px 0; }
+      .nav-links { display: none; flex-direction: column; width: 100%; padding-bottom: 8px; }
+      .nav-links.open { display: flex; }
+      nav a { padding: 8px 4px; font-size: 14px; }
+    }
     .hero { text-align: center; padding: 80px 20px 60px; }
     .hero h1 { font-size: 48px; color: #2c1810; letter-spacing: 4px; margin-bottom: 12px; }
     .hero p { font-size: 16px; color: #888; letter-spacing: 1px; }
@@ -27,16 +36,27 @@
     .stats .item { text-align: center; }
     .stats .num { font-size: 36px; font-weight: bold; }
     .stats .label { font-size: 13px; color: #ccc; margin-top: 4px; }
+    @media (max-width: 640px) {
+      .hero { padding: 40px 20px 30px; }
+      .hero h1 { font-size: 28px; letter-spacing: 2px; }
+      .cards { padding: 0 16px 40px; gap: 16px; }
+      .card { width: 100%; padding: 20px; }
+      .stats { gap: 24px; padding: 20px 16px; flex-wrap: wrap; }
+      .stats .num { font-size: 26px; }
+    }
   </style>
 </head>
 <body>
   <nav>
     <span class="logo">李白全集知识库</span>
-    <a href="reader/index.html">阅读器</a>
-    <a href="search/index.html">意象检索</a>
-    <a href="map/index.html">游历地图</a>
-    <a href="graph/index.html">诗人关系</a>
-    <a href="allusions/index.html">十大典故</a>
+    <button class="nav-toggle" onclick="this.nextElementSibling.classList.toggle('open')">☰</button>
+    <div class="nav-links">
+      <a href="reader/index.html">阅读器</a>
+      <a href="search/index.html">意象检索</a>
+      <a href="map/index.html">游历地图</a>
+      <a href="graph/index.html">诗人关系</a>
+      <a href="allusions/index.html">十大典故</a>
+    </div>
   </nav>
 
   <div class="hero">

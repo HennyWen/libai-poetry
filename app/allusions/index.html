@@ -11,6 +11,7 @@
     nav .logo { color: #e8c97a; font-size: 18px; font-weight: bold; margin-right: 40px; }
     nav a { color: #ccc; text-decoration: none; padding: 8px 16px; border-radius: 4px; font-size: 14px; }
     nav a:hover { color: #e8c97a; background: rgba(232,201,122,0.1); }
+    .nav-toggle { display: none; background: none; border: none; color: #e8c97a; font-size: 22px; cursor: pointer; margin-left: auto; }
     .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
     h1 { text-align: center; font-size: 36px; color: #2c1810; margin-bottom: 12px; }
     .subtitle { text-align: center; color: #888; margin-bottom: 40px; }
@@ -24,17 +25,31 @@
     .poem-item { margin-bottom: 12px; padding: 12px; background: #faf8f4; border-radius: 6px; }
     .poem-title { font-weight: bold; color: #2c1810; margin-bottom: 6px; }
     .poem-content { font-size: 14px; color: #666; line-height: 1.6; }
+    @media (max-width: 640px) {
+      nav { flex-wrap: wrap; height: auto; padding: 0 16px; }
+      nav .logo { padding: 12px 0; }
+      .nav-toggle { display: block; padding: 12px 0; }
+      .nav-links { display: none; flex-direction: column; width: 100%; padding-bottom: 8px; }
+      .nav-links.open { display: flex; }
+      nav a { padding: 8px 4px; font-size: 14px; }
+      h1 { font-size: 24px; }
+      .grid { grid-template-columns: 1fr; }
+      .container { padding: 20px 16px; }
+    }
   </style>
 </head>
 <body>
   <nav>
     <span class="logo">李白全集知识库</span>
-    <a href="../index.html">首页</a>
-    <a href="../reader/index.html">阅读器</a>
-    <a href="../search/index.html">意象检索</a>
-    <a href="../map/index.html">游历地图</a>
-    <a href="../graph/index.html">诗人关系</a>
-    <a href="index.html" class="active">十大典故</a>
+    <button class="nav-toggle" onclick="this.nextElementSibling.classList.toggle('open')">☰</button>
+    <div class="nav-links">
+      <a href="../index.html">首页</a>
+      <a href="../reader/index.html">阅读器</a>
+      <a href="../search/index.html">意象检索</a>
+      <a href="../map/index.html">游历地图</a>
+      <a href="../graph/index.html">诗人关系</a>
+      <a href="index.html" class="active">十大典故</a>
+    </div>
   </nav>
 
   <div class="container">
