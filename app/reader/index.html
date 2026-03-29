@@ -107,6 +107,7 @@
     </div>
     <div class="sidebar-left">
       <div class="search"><input type="text" id="searchPoem" placeholder="搜索诗名…"></div>
+      <div id="listLoading" style="padding:20px;text-align:center;color:#aaa;font-size:13px">加载中…</div>
       <ul class="poem-list" id="poemList"></ul>
     </div>
 
@@ -140,20 +141,26 @@
     let poems = [], entityMap = {}, annotationMap = {};
 
     async function load() {
-      const [poemsData, entitiesData, annotationsData] = await Promise.all([
-        fetch('../../data/poems/tang/libai/libai_poems_structured.json').then(r => r.json()),
-        fetch('../../data/entities/libai_entities_round1.json').then(r => r.json()),
-        fetch('../../data/annotations/libai_wangqi_annotations_fixed.json').then(r => r.json())
-      ]);
-      poems = poemsData;
-      entitiesData.forEach(e => { entityMap[e.poem_id] = e.entities || []; });
-      annotationsData.forEach(a => { annotationMap[a.title] = a.annotations || []; });
-      renderList(poems);
+      try {
+        const [poemsData, entitiesData, annotationsData] = await Promise.all([
+          fetch('../../data/poems/tang/libai/libai_poems_structured.json').then(r => r.json()),
+          fetch('../../data/entities/libai_entities_round1.json').then(r => r.json()),
+          fetch('../../data/annotations/libai_wangqi_annotations_fixed.json').then(r => r.json())
+        ]);
+        poems = poemsData;
+        entitiesData.forEach(e => { entityMap[e.poem_id] = e.entities || []; });
+        annotationsData.forEach(a => { annotationMap[a.title] = a.annotations || []; });
+        document.getElementById('listLoading').style.display = 'none';
+        renderList(poems);
+      } catch (err) {
+        document.getElementById('listLoading').textContent = '加载失败，请刷新重试';
+      }
     }
 
+    let activeEl = null;
     function renderList(list) {
       const ul = document.getElementById('poemList');
-      ul.innerHTML = '';
+      const frag = document.createDocumentFragment();
       let lastVol = null;
       list.forEach(poem => {
         if (poem.volume !== lastVol) {
@@ -161,19 +168,18 @@
           const li = document.createElement('li');
           li.className = 'vol';
           li.textContent = poem.volume || '未分卷';
-          ul.appendChild(li);
+          frag.appendChild(li);
         }
         const li = document.createElement('li');
         li.textContent = poem.title;
-        li.onclick = () => showPoem(poem, li);
-        ul.appendChild(li);
+        li.onclick = () => { if (activeEl) activeEl.classList.remove('active'); activeEl = li; li.classList.add('active'); showPoem(poem, li); };
+        frag.appendChild(li);
       });
+      ul.innerHTML = '';
+      ul.appendChild(frag);
     }
 
     function showPoem(poem, el) {
-      document.querySelectorAll('.poem-list li').forEach(li => li.classList.remove('active'));
-      el.classList.add('active');
-
       const entities = entityMap[poem.id] || [];
       const themes = entities.filter(e => e.type === '情感主题');
       const others = entities.filter(e => e.type !== '情感主题');
@@ -265,9 +271,13 @@
       return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
+    let searchTimer;
     document.getElementById('searchPoem').addEventListener('input', e => {
-      const q = e.target.value.trim();
-      renderList(q ? poems.filter(p => p.title.includes(q)) : poems);
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        const q = e.target.value.trim();
+        renderList(q ? poems.filter(p => p.title.includes(q)) : poems);
+      }, 200);
     });
 
     load();
